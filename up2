@@ -1,0 +1,2 @@
+curl -F "file=@$1" localhost/upload2?to=$2
+ls -l public

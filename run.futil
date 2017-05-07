@@ -1,0 +1,9 @@
+docker rm -f futil
+
+docker run -p 8383:8383 \
+	--name futil \
+	-v /home/bbkingtw:/fservice_root \
+	-v $(pwd)/source.futil/futil.js:/app/futil.js \
+	-d bbkingtw/futil node futil.js
+
+docker logs -f futil

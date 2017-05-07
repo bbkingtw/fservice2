@@ -1,0 +1,14 @@
+docker rm -f nginx3f
+
+export nginx=/opt/verynginx/openresty/nginx
+
+docker run -it --name="nginx3f" \
+	-p 8085:80 \
+	-v $(pwd)/nginx.conf:$nginx/conf/nginx.conf:ro \
+	-v $(pwd)/jpg.jpg:$nginx/jpg.jpg:ro \
+	-v $(pwd)/mp3.mp3:$nginx/mp3.mp3:ro \
+	-v $(pwd)/public:/public:rw \
+	-v $(pwd)/logs:/opt/openresty/nginx/logs \
+	tsmc/very bash
+
+docker logs -f nginx3f

@@ -1,0 +1,255 @@
+
+worker_processes  1;
+error_log logs/error.log;
+events {
+    worker_connections 1024;
+}
+
+include /opt/verynginx/verynginx/nginx_conf/in_external.conf;
+
+http {
+
+ include /opt/verynginx/verynginx/nginx_conf/in_http_block.conf;
+	lua_shared_dict db 10m;
+
+  server {
+	include /opt/verynginx/verynginx/nginx_conf/in_server_block.conf;
+    listen 80;
+    location / {
+      default_type text/html;
+        content_by_lua '
+          ngx.say("<p>hello, world</p>")
+        ';
+    }
+  	location /x {
+      default_type text/html;
+			content_by_lua_block {
+				local key=ngx.var.uri;
+				ngx.say("<p>hello, $key</p>")
+				ngx.say("uri==>",key)
+				for i=0,10 do
+					ngx.say("this is ",i,"<br>")
+				end
+				--ngx.print('<hr>method',ngx.req.get_Method())
+				ngx.print('<hr>header',ngx.req.raw_header())
+			}
+		}
+
+		location /x2 {
+			default_type text/html;
+			content_by_lua_block {
+				//ngx.print('<hr>header',ngx.req.raw_header())
+				ngx.say('aaaaaa </br>')
+				local url = ngx.var.uri
+				#ngx.say('<br>',url,'<br/>')
+				#ngx.print('这次访问的header头是   ',ngx.req.raw_header())
+				#ngx.print('<h1> 这个是 h1 </h1>')
+				#ngx.print('这次访问的是 get 还是 post 呀   ',ngx.req.get_Method())
+				#local args = ngx.req.get_uri_args()
+				#ngx.print(args)
+				#local res = ngx.location.capture("/")
+				#ngx.print('<br>http code <br>‘,res.status)
+			}
+		}
+
+		location /test {
+			rewrite_by_lua_block {
+				ngx.ctx.foo = 76
+			}
+			access_by_lua_block {
+				ngx.ctx.foo = ngx.ctx.foo + 3
+			}
+			content_by_lua_block {
+				ngx.say(ngx.ctx.foo)
+			}
+		}
+
+		location /combine {
+      default_type text/html;
+			content_by_lua_block {
+				res=ngx.location.capture('/test')
+				res2=ngx.location.capture('/x')
+				ngx.say(ngx.req.get_method());
+				ngx.say(res.body)
+				ngx.say('<hr>')
+				ngx.print(res2.body)
+				ngx.print('<hr>',ngx.now())
+				ngx.say('<hr>',ngx.now())
+			}	
+		}
+
+		location /set {
+      content_by_lua_block {
+        local db = ngx.shared.db
+				local empid=ngx.var.arg_empid
+				local name=ngx.var.arg_name
+        ngx.say("STORED",empid,name)
+        db:set(empid, name)
+      }
+    }
+    location /get {
+      content_by_lua_block {
+        local db = ngx.shared.db
+				local empid=ngx.var.arg_empid
+        ngx.say(db:get(empid))
+      }
+    }
+
+		location /download {
+			content_by_lua_block {
+				local filename
+				if (ngx.var.arg_file) then
+					filename = ngx.var.arg_file
+					ngx.log(ngx.OK, 'filename1', ngx.var.arg_file)
+				else
+					filename = "./jpg.jpg"
+					ngx.log(ngx.OK, 'filename2', filename)
+				end
+				ngx.log(ngx.OK, 'filename final ==>', filename)
+				local file = io.open(filename, "rb")
+				if file then
+				  local contents = file:read( "*a" )
+				  local boundary = "somerndstring"
+				  ngx.print(contents)	
+				else
+				  ngx.exit(404)
+				end
+			}
+		}
+
+		location /upload2 {
+			client_max_body_size 100G;
+			content_by_lua_block {
+				local resty_sha1 = require "resty.sha1"
+    		local upload = require "resty.upload"
+
+    		local chunk_size = 4096
+    		local form = upload:new(chunk_size)
+    		local sha1 = resty_sha1:new()
+    		local file
+    		while true do
+        	local typ, res, err = form:read()
+
+        	if not typ then
+             ngx.say("failed to read: ", err)
+             return
+        	end
+
+        	if typ == "header" then
+            local file_name = ngx.var.arg_to ---my_get_file_name(res)
+            if file_name then
+                file = io.open(file_name, "w+")
+                if not file then
+                    ngx.say("failed to open file ", file_name)
+                    return
+                end
+            end
+
+         	elseif typ == "body" then
+            if file then
+                file:write(res)
+                sha1:update(res)
+            end
+
+        	elseif typ == "part_end" then
+            file:close()
+            file = nil
+            local sha1_sum = sha1:final()
+            sha1:reset()
+            my_save_sha1_sum(sha1_sum)
+
+        	elseif typ == "eof" then
+            break
+
+        	else
+            -- do nothing
+					end
+        end
+			}
+		}
+
+
+		location /secure {
+     access_by_lua_block {
+         local res = ngx.location.capture("/auth")
+
+         if res.status == ngx.HTTP_OK then
+             return
+         end
+
+         if res.status == ngx.HTTP_FORBIDDEN then
+             ngx.exit(res.status)
+         end
+
+         ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+     }
+		}
+
+		location /upload {
+			client_max_body_size 100G;
+			content_by_lua_block {
+				local mget=ngx.req.get_method()=="GET"
+
+				if mget then 
+					ngx.print("please use post")
+					ngx.exit(200)
+				end 
+
+				local upload = require "resty.upload"
+				local cjson = require "cjson"
+
+				local chunk_size = 100 -- should be set to 4096 or 8192
+				-- for real-world settings
+
+				local form, err = upload:new(chunk_size)
+				if not form then
+					ngx.log(ngx.ERR, "failed to new upload: ", err)
+					ngx.exit(500)
+				end
+
+				form:set_timeout(1000) -- 1 sec
+				local size=0;
+				--local file=io.open("a","w")
+				ngx.log(ngx.OK,"file>",file)
+
+				if true then
+					local file2 = io.open(ngx.var.arg_to, "a+")  
+					ngx.say(file2)
+					file2:write("123")
+					file2:close()
+					--io.output(file2)                   
+					--io.write("\nhello world")        
+					--io.close(file2)
+				end
+
+				while true do
+					local typ, res, err = form:read()
+					if not typ then
+						ngx.say("failed to read: ", err)
+						return
+					end
+					--ngx.say("read: ", cjson.encode({typ, res}))
+					--ngx.say(res.body)
+
+					size=size+chunk_size
+					ngx.say("read so far: ", cjson.encode({typ, size}))
+
+					if typ=='BODY' then
+						--file:write("123")
+					end
+
+					--ngx.log(ngx.OK, "good","size",size)
+
+					if typ == "eof" then
+						ngx.log(ngx.OK, file)
+						--file:close()
+						break
+					end
+				end
+
+        local typ, res, err = form:read()
+        --ngx.say("read: ", cjson.encode({typ, res}))
+      }
+    }
+  }
+}

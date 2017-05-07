@@ -1,0 +1,14 @@
+from anapsix/nodejs
+
+run npm install optimist
+run npm install chalk
+run npm install express
+run npm install express-session body-parser 
+run npm install moment express-bearer-token
+run npm install jsonwebtoken
+run npm install cookie-parser
+run npm install jade
+run npm install async
+run npm install lodash
+
+add source.futil /app

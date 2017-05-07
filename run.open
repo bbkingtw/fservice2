@@ -1,0 +1,13 @@
+docker rm -f open
+
+docker run -d \
+	--name="open" \
+	-v $(pwd)/public:/public:rw \
+	-v $(pwd)/nginx/my_lua:/my_lua:rw \
+	-v $(pwd)/nginx/conf:/usr/local/openresty/nginx/conf:rw \
+	-v $(pwd)/nginx/html:/usr/local/openresty/nginx/html:rw \
+	-v $(pwd)/logs:/opt/openresty/nginx/logs \
+	-p 9000:80 \
+	openresty/openresty
+
+docker logs -f open

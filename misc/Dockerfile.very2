@@ -1,0 +1,20 @@
+FROM alpine
+
+RUN apk update 
+RUN apk add wget 
+RUN apk add perl 
+RUN apk add make 
+RUN apk add build-essential 
+RUN apk add procps 
+#    libreadline-dev libncurses5-dev libpcre3-dev libssl-dev \
+# && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir /code
+COPY . /code
+WORKDIR /code
+RUN groupadd -r nginx && useradd -r -g nginx nginx
+RUN python /code/public/VeryNginx/install.py install
+
+EXPOSE 80
+
+CMD ["/opt/verynginx/openresty/nginx/sbin/nginx", "-g", "daemon off; error_log /dev/stderr info;"]

@@ -1,0 +1,5 @@
+docker run -it \
+	-p 8084:80 \
+	-v $PWD/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro \
+	-v $PWD/logs:/usr/local/openresty/nginx/logs \
+	ficusio/openresty sh

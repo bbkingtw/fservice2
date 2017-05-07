@@ -1,0 +1,19 @@
+#from test/openresty
+from openresty/openresty
+
+RUN apk update
+RUN apk add curl
+RUN apk add cmake
+RUN apk add git
+RUN apk add bash
+RUN apk add perl
+RUN curl -L "https://tinyurl.com/luadist" > install.sh # you can review the file
+RUN sh install.sh
+#ENV nginx /usr/local/openresty/nginx
+#ENV nginx $NGINX_PREFIX
+#ENV nginx /opt/openresty/nginx
+
+#add source.open/upload2.lua /my_lua/upload2.lua
+#add source.open/auth.lua /my_lua/auth.lua
+
+#add nginx.conf.open $nginx/conf/nginx.conf

@@ -1,0 +1,7 @@
+docker rm -f sso
+
+docker run -p 8282:8282 \
+	--name sso \
+	-d bbkingtw/sso node sso.js
+
+docker logs -f sso

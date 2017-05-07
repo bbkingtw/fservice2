@@ -1,0 +1,2 @@
+./kill_all
+docker-compose up

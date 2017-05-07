@@ -1,0 +1,4 @@
+vi nginx/my_lua/auth.lua
+./build.open
+docker-compose restart
+curl -I http://localhost:9000/upload_file

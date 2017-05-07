@@ -1,0 +1,10 @@
+export nginx=/usr/local/openresty/nginx
+
+docker rm -f nginx3f
+docker run -d --name="nginx3f" \
+	-p 80:80 \
+	-v $PWD/nginx.conf.openresty:$nginx/conf/nginx.conf:ro \
+	-v $PWD/logs:$nginx/logs \
+	openresty/openresty
+
+docker logs -f nginx3

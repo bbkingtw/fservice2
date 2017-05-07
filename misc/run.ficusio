@@ -1,0 +1,15 @@
+docker rm -f nginx3f
+docker run -d --name="nginx3f" \
+	--net=host \
+	-v $(pwd)/nginx.conf.ficusio:/opt/openresty/nginx/conf/nginx.conf:ro \
+	-v $(pwd)/jpg.jpg:/opt/openresty/nginx/jpg.jpg:ro \
+	-v $(pwd)/mp3.mp3:/opt/openresty/nginx/mp3.mp3:ro \
+	-v $(pwd)/public:/public:rw \
+	-v $(pwd)/logs:/opt/openresty/nginx/logs \
+	-v $(pwd)/upload2.lua:/my_lua/upload2.lua \
+	-v $(pwd)/auth.lua:/my_lua/auth.lua \
+	ficusio/openresty
+	#-v $(pwd)/public/VeryNginx/verynginx:/opt/VeryNginx/VeryNginx \
+#-p 80:80 -p 8282:8282 \
+
+docker logs -f nginx3f

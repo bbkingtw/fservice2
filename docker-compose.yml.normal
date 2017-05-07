@@ -1,0 +1,17 @@
+version: "2"
+services:
+  open:
+    image: test/open
+    links:
+      - "sso:sso" 
+    ports:
+      - "9000:80"
+    volumes:
+      - "./public:/public:rw"
+      - "./logs:/opt/openresty/nginx/logs:rw"
+      - "./nginx/my_lua:/my_lua:ro"
+  sso:
+    image: tsmc/sso
+    ports:
+      - "8282:8282"
+    entrypoint: "node /app/sso.js"

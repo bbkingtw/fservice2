@@ -1,0 +1,30 @@
+version: "2"
+services:
+  open:
+    container_name: open
+    image: openresty/openresty
+    links:
+      - "sso:sso" 
+      - "futil:futil"
+    ports:
+      - "9000:80"
+    volumes:
+      - "./public:/public:rw"
+      - "./nginx/my_lua:/my_lua:ro"
+      - "./nginx/conf:/usr/local/openresty/nginx/conf"
+      - "./nginx/html:/usr/local/openresty/nginx/html"
+      - "./logs:/usr/local/openresty/nginx/logs:rw"
+  sso:
+    container_name: sso
+    image: tsmc/sso
+    ports:
+      - "8282:8282"
+    entrypoint: "node /app/sso.js"
+  futil:
+    container_name: "futil"
+    image: "bbkingtw/futil"
+    ports:
+      - "8383:8383"
+    volumes:
+      - "./source.futil/futil.js:/app/futil.js"
+    entrypoint: "node /app/futil.js"
